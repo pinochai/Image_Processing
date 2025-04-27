@@ -1,58 +1,147 @@
+📷 Image Processing Application on AWS
+This project is an event-driven, serverless image processing system built using AWS CDK (Python).
+It automatically processes images uploaded to an S3 bucket, detects objects using Amazon Rekognition, stores results in DynamoDB, and sends notifications via SNS.
+A full CI/CD pipeline using CodeCommit, CodeBuild, and CodePipeline ensures automated deployment.
 
-# Welcome to your CDK Python project!
+🛠️ Architecture
+Amazon S3: Stores uploaded product images.
 
-This is a blank project for CDK development with Python.
+Amazon SQS: Buffers S3 event notifications and ensures reliable processing.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+AWS Lambda: Processes images, uses Rekognition to detect labels, saves results to DynamoDB, and sends notifications.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+Amazon Rekognition: Detects labels/tags within images.
 
-To manually create a virtualenv on MacOS and Linux:
+Amazon DynamoDB: Stores processed image metadata and tags.
 
-```
-$ python3 -m venv .venv
-```
+Amazon SNS: Sends email notifications after processing or in case of errors.
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+Amazon CloudWatch: Monitors Lambda function errors and durations through alarms.
 
-```
-$ source .venv/bin/activate
-```
+AWS CodeCommit: Hosts the application source code.
 
-If you are a Windows platform, you would activate the virtualenv like this:
+AWS CodePipeline: Orchestrates continuous integration and deployment (CI/CD).
 
-```
-% .venv\Scripts\activate.bat
-```
+AWS CodeBuild: Builds and deploys the infrastructure using AWS CDK.
 
-Once the virtualenv is activated, you can install the required dependencies.
+📂 Project Structure
+bash
+Copy
+Edit
+├── cdk.json
+├── README.md
+├── lambda_function/
+│   └── process_image.py   # Lambda function for processing images
+├── stack/
+│   ├── image_processing_stack.py  # Infrastructure: S3, SQS, SNS, Lambda, DynamoDB, CloudWatch
+│   └── image_processing_pipeline_stack.py  # CI/CD Pipeline: CodeCommit, CodeBuild, CodePipeline
+├── requirements.txt
+└── ...
+🚀 Deployment Workflow
+Upload an image to the S3 bucket.
 
-```
-$ pip install -r requirements.txt
-```
+S3 Event triggers an SQS message.
 
-At this point you can now synthesize the CloudFormation template for this code.
+Lambda function is triggered by the SQS message:
 
-```
-$ cdk synth
-```
+Downloads the image from S3.
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+Detects labels using Rekognition.
 
-## Useful commands
+Stores image metadata and detected labels into DynamoDB.
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+Sends an SNS notification (email) with the detection results.
 
-Enjoy!
+CloudWatch alarms monitor and alert if Lambda experiences high error rates or long runtimes.
+
+🧪 CI/CD Pipeline
+Source: Pulls the code from CodeCommit repository (master branch).
+
+Build:
+
+Installs dependencies (Python & CDK).
+
+Synthesizes the CDK CloudFormation templates.
+
+Deploys the ImageProcessingStack-dev environment.
+
+Permissions: CodeBuild has wide deployment permissions across S3, Lambda, DynamoDB, SQS, SNS, Rekognition, CloudFormation, CloudWatch, X-Ray.
+
+⚙️ Features
+✅ Serverless architecture (auto-scaling, no server maintenance)
+
+✅ Event-driven using S3 + SQS + Lambda
+
+✅ Image recognition using Amazon Rekognition
+
+✅ DynamoDB storage for image metadata and tags
+
+✅ Email notifications after each image processing
+
+✅ Dead Letter Queue (DLQ) to handle failed processing safely
+
+✅ CloudWatch alarms for Lambda monitoring
+
+✅ X-Ray tracing for Lambda performance and debugging
+
+✅ Automated deployments with CI/CD Pipeline (CodeCommit + CodeBuild + CodePipeline)
+
+✅ Environment isolation (dev or prod) with configurable removal policies
+
+🔧 How to Deploy
+Install AWS CDK if not already installed:
+
+bash
+Copy
+Edit
+npm install -g aws-cdk
+Install project dependencies:
+
+bash
+Copy
+Edit
+pip install -r requirements.txt
+Bootstrap your AWS environment (only once per account/region):
+
+bash
+Copy
+Edit
+cdk bootstrap
+Deploy the stack:
+
+bash
+Copy
+Edit
+cdk deploy ImageProcessingStack-dev
+📜 Environment Variables for Lambda
+PRODUCT_TAG_DATABASE - DynamoDB table name where image labels are stored.
+
+QUEUE_URL - SQS Queue URL where messages are received.
+
+SNS_TOPIC_ImageProcessing - SNS Topic ARN for notifications.
+
+📧 Notifications
+You will receive an email notification upon:
+
+Successful image processing (with labels detected)
+
+Any processing error or Lambda function failure (via CloudWatch alarms)
+
+Default email recipient:
+mehdi.sghaier@draexlmaier.com
+
+📈 Monitoring
+CloudWatch Alarms trigger if:
+
+Lambda errors > 1 per evaluation period.
+
+Lambda execution time > 50 seconds.
+
+X-Ray Tracing is enabled for end-to-end debugging of Lambda functions.
+
+🧹 Resource Cleanup
+If you're deploying in a non-production environment (dev), resources will be automatically destroyed when you delete the stack.
+For production (prod), resources like S3 bucket and DynamoDB table are retained.
+
+🙌 Author
+Mehdi Sghaier
